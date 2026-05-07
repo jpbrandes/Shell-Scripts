@@ -4,7 +4,7 @@
 # ============================================================
 #   CANIVETE SUÍÇO — DIAGNÓSTICO PC
 #   Para uso no Linux Mint Live Mode (pendrive)
-#   Execute como root: sudo ./tecnico.sh
+#   Execute como root: sudo ./Verificacao.sh
 # ============================================================
 
 RED='\033[0;31m'
