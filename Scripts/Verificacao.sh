@@ -4,7 +4,7 @@
 # ============================================================
 #   CANIVETE SUÍÇO — DIAGNÓSTICO PC
 #   Para uso no Linux Mint Live Mode (pendrive)
-#   Execute como root: sudo ./Verificacao.sh
+#   Executar como root: sudo ./Verificacao.sh
 # ============================================================
 
 RED='\033[0;31m'
@@ -15,14 +15,14 @@ NC='\033[0m'
 
 if [ "$EUID" -ne 0 ]; then
   echo -e "${RED}Erro: Execute este script como root.${NC}"
-  echo "Use: sudo ./tecnico.sh"
+  echo "Use: sudo ./tecnico.sh" # Esse bloco verifica se o script está sendo executado como root (sudo).
   exit 1
 fi
 
 echo -e "${YELLOW}Instalando ferramentas essenciais...${NC}"
-apt-get update -qq
+sudo apt update -y
 # FIX 3: adicionado lm-sensors para leitura real de temperatura
-apt-get install -y smartmontools ethtool ntfs-3g lm-sensors -qq
+sudo apt install smartmontools ethtool ntfs-3g lm-sensors git gh -y # Esse bloco instala as ferramentas smartmontools, ethtool, ntfs-3g e lm-sensors
 
 function pause() {
     read -p "Pressione [Enter] para continuar..."
@@ -38,11 +38,11 @@ function diagnostico_hardware() {
 
     # 1. PROCESSADOR E PLACA-MÃE
     echo -e "${GREEN}[+] Verificando Processador e Placa-mãe (MCE Logs)...${NC}"
-    MCE_ERRORS=$(dmesg | grep -iE "Machine Check|Hardware Error")
+    MCE_ERRORS=$(dmesg | grep -iE "Machine Check|Hardware Error") # Esse linha busca as palavras Machine Check e Hardware Error, caso não tenha essas palavras, resulta em nenhum erro.
     if [ -z "$MCE_ERRORS" ]; then
         echo "Nenhum erro crítico de hardware encontrado."
     else
-        echo -e "${RED}ALERTA: Erros de hardware detectados no processador/placa-mãe:${NC}"
+        echo -e "${RED}ALERTA: Erros de hardware detectados no processador/placa-mãe:${NC}"  
         echo "$MCE_ERRORS"
     fi
     echo ""
@@ -65,8 +65,9 @@ function diagnostico_hardware() {
         sensors-detect --auto &>/dev/null 2>&1 || true
         # Remove a parte entre parênteses (high/crit) antes de extrair a temperatura,
         # para não capturar os limiares como se fossem a leitura real.
+        # Esse bloco utiliza a ferramenta da lm-sensors, analisando núcleo por núcleo.
         CPU_TEMPS=$(sensors 2>/dev/null \
-            | grep -E "^(Core [0-9]|Tdie|Tctl|CPU Temp|Package id)" \
+            | grep -E "^(Core [0-9]|Tdie|Tctl|CPU Temp|Package id)" \ 
             | sed 's/([^)]*)//g' \
             | grep -oP '[+-]\d+\.\d+°C' \
             | grep -oP '\d+' )
@@ -75,7 +76,7 @@ function diagnostico_hardware() {
             MAX_TEMP=$(echo "$CPU_TEMPS" | sort -n | tail -1)
             echo "  Temperaturas via lm-sensors:"
             sensors 2>/dev/null \
-                | grep -E "^(Core [0-9]|Tdie|Tctl|CPU Temp|Package id)" \
+                | grep -E "^(Core [0-9]|Tdie|Tctl|CPU Temp|Package id)" \ # Esses blocos a partir deste, apenas são uma média de temperatura, sendo acima de 90 crítico.
                 | sed 's/^/    /'
             echo ""
             if [ "$MAX_TEMP" -ge 90 ]; then
@@ -111,7 +112,7 @@ function diagnostico_hardware() {
                     elif [ "$TEMP_C" -ge 75 ]; then
                         echo -e "${YELLOW}  AVISO: Temperatura elevada: ${TEMP_C}°C — Verificar cooler.${NC}"
                     fi
-                    TEMP_FOUND=1
+                    TEMP_FOUND=1 # Vê as temperaturas do CPU.
                 fi
             fi
         done
@@ -131,7 +132,7 @@ function diagnostico_hardware() {
                     label=$(cat "$label_file" 2>/dev/null || echo "sensor")
                     echo "  [$hwmon_name] $label → ${TEMP_C}°C"
                     TEMP_FOUND=1
-                done
+                done # Esse bloco acima, aparentemente identifica o rótulo do processador.
             fi
         done
     fi
@@ -146,7 +147,7 @@ function diagnostico_hardware() {
     echo -e "${GREEN}[+] Verificando Saúde dos HDs/SSDs (S.M.A.R.T.)...${NC}"
     DRIVES=$(lsblk -nd -o NAME | grep -E "^sd|^nvme")
     if [ -z "$DRIVES" ]; then
-        echo "Nenhum disco detectado."
+        echo "Nenhum disco detectado." # Verifica a existência de disco
     else
         while IFS= read -r drive; do
             echo -e "${CYAN}  Testando /dev/$drive:${NC}"
@@ -158,7 +159,7 @@ function diagnostico_hardware() {
 
     # 4. PORTAS USB
     echo -e "${GREEN}[+] Verificando erros em portas USB...${NC}"
-    USB_ERRORS=$(dmesg | grep -i usb | grep -iE "error|fail|cannot enumerate|over-current")
+    USB_ERRORS=$(dmesg | grep -i usb | grep -iE "error|fail|cannot enumerate|over-current") # PALAVRAS CHAVE, caso o dmesg retorne alguma dessas palavras, existe erro nas portas USB.
     if [ -z "$USB_ERRORS" ]; then
         echo "Nenhum erro elétrico ou de comunicação USB detectado."
     else
@@ -169,9 +170,9 @@ function diagnostico_hardware() {
 
     # 5. REDE
     echo -e "${GREEN}[+] Verificando Interfaces de Rede...${NC}"
-    NET_ERRORS=$(dmesg | grep -iE "eth0|enp|wlan|net" | grep -iE "error|fail|down|link is not ready")
+    NET_ERRORS=$(dmesg | grep -iE "eth0|enp|wlan|net" | grep -iE "error|fail|down|link is not ready") # PALAVRAS CHAVE novamente, caso haja alguma dessas palavras, existem erros de rede.
     if [ -z "$NET_ERRORS" ]; then
-        echo "Nenhum erro crítico de driver ou hardware de rede detectado."
+        echo "Nenhum erro crítico de driver ou hardware de rede detectado." 
     else
         echo -e "${RED}Avisos de rede encontrados (cabo solto ou placa falhando):${NC}"
         echo "$NET_ERRORS" | tail -n 5
@@ -199,7 +200,7 @@ function diagnostico_hardware() {
 
     if [ -z "$ALL_RAM_ERRORS" ]; then
         echo "Nenhum erro de memória detectado nos logs."
-        echo -e "${CYAN}  Dica: Para teste 100% confiável de RAM, use o MemTest86+ no boot.${NC}"
+        echo -e "${CYAN}  Dica: Para teste 100% confiável de RAM, use o MemTest86+ no boot.${NC}" # Esse bloco checa a memória ram e procura novamente palavras chaves com dmesg e grep.
     else
         echo -e "${RED}ALERTA: Falhas de módulo de memória registradas!${NC}"
         echo "$ALL_RAM_ERRORS"
@@ -232,7 +233,7 @@ function reparo_sistema() {
     echo ""
 
     if [ -n "$BOOT_DEVICE" ]; then
-        echo -e "${RED}⛔  NÃO repare: /dev/$BOOT_DEVICE — este é o seu PENDRIVE LIVE${NC}"
+        echo -e "${RED}⛔  NÃO repare: /dev/$BOOT_DEVICE — este é o seu PENDRIVE LIVE${NC}" # É importante prestar atenção aqui, caso não haja atenção necessária é possível apagar o pendrive bootável.
         echo ""
     fi
 
@@ -242,8 +243,11 @@ function reparo_sistema() {
         | { [ -n "$BOOT_DEVICE" ] && grep -v "$BOOT_DEVICE" || cat; }
     echo ""
 
-    read -p "Digite a partição do HD para reparar (Ex: /dev/sda1) ou 'sair': " TARGET_PART
+    read -p "Digite a partição do HD para reparar (Ex: /dev/sda1) ou 'sair': " TARGET_PART 
     [ "$TARGET_PART" = "sair" ] && return
+
+    # Partições em discos Linux são organizados com números.
+    # Se sda é o disco principal, as partições dele são dadas como sda1,sda2... É preciso se atentar com a partição correta. Uma forma de identifcar elas é pelo MOUNTPOINT e pelo tamanho em armazenamento.
 
     # ──────────────────────────────────────────────────────
     # FIX 1 — BLOQUEIO DO PENDRIVE
@@ -257,7 +261,7 @@ function reparo_sistema() {
     if [ -n "$BOOT_DEVICE" ] && echo "$TARGET_PART" | grep -qE "/dev/${BOOT_DEVICE}(p?[0-9]+)?$"; then
         echo ""
         echo -e "${RED}⛔  BLOQUEADO: Você digitou o pendrive live — operação cancelada.${NC}"
-        echo "    Digite a partição do HD (geralmente /dev/sda1)."
+        echo "    Digite a partição do HD (geralmente /dev/sda1)." # Proteção contra formatação do pendrive bootável.
         pause
         return
     fi
@@ -265,7 +269,7 @@ function reparo_sistema() {
     if [ ! -b "$TARGET_PART" ]; then
         echo -e "${RED}Partição '$TARGET_PART' não encontrada. Verifique o nome digitado.${NC}"
         pause
-        return
+        return # Protege contra partições inexistentes.
     fi
 
     FSTYPE=$(blkid -o value -s TYPE "$TARGET_PART" 2>/dev/null)
@@ -274,7 +278,7 @@ function reparo_sistema() {
     echo ""
 
     read -p "Confirmar reparo em $TARGET_PART? (s/N): " CONFIRM
-    if [[ ! "$CONFIRM" =~ ^[Ss]$ ]]; then
+    if [[ ! "$CONFIRM" =~ ^[Ss]$ ]]; then # Bloco da operação de reparo
         echo "Operação cancelada."
         pause
         return
@@ -283,7 +287,7 @@ function reparo_sistema() {
     if mount | grep -q "$TARGET_PART"; then
         echo -e "${YELLOW}Partição montada. Desmontando para o reparo...${NC}"
         umount "$TARGET_PART" || {
-            echo -e "${RED}Falha ao desmontar. Tente reiniciar o live mode e rodar o script novamente.${NC}"
+            echo -e "${RED}Falha ao desmontar. Tente reiniciar o live mode e rodar o script novamente.${NC}" # Segundo bloco da operação de reparo
             pause
             return
         }
@@ -293,7 +297,7 @@ function reparo_sistema() {
 
     case "$FSTYPE" in
         ext2|ext3|ext4)
-            echo -e "${GREEN}Iniciando reparo em $TARGET_PART ($FSTYPE)...${NC}"
+            echo -e "${GREEN}Iniciando reparo em $TARGET_PART ($FSTYPE)...${NC}" # Operação de reparo
             echo "O que está acontecendo agora:"
             echo "  Etapa 1/5 — Verificando inodes (fichas de cada arquivo)"
             echo "  Etapa 2/5 — Verificando diretórios"
