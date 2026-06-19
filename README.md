@@ -17,3 +17,6 @@ Um script simples que instala programas úteis, os programas contidos no script 
 - VLC
 - Google Chrome
 
+## ScriptInstall.sh
+
+Usado para automatizar a configuração do GitHub, de modo que não peça senha.
