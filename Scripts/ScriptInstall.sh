@@ -10,7 +10,7 @@ echo "========================================================"
 echo "INSTALAÇÃO DE PROGRAMAS ESSENCIAIS"
 echo "========================================================"
 
-sudo apt install git gcc wget g++ vlc gimp openjdk-25-jdk libreoffice texlive-full texmaker -y 
+sudo apt install git vim gcc wget g++ vlc gimp openjdk-25-jdk libreoffice texlive-full texmaker -y 
 
 echo "========================================================"
 echo "INSTALAÇÃO VISUAL STUDIO CODE"
