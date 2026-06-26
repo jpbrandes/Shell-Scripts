@@ -1,5 +1,5 @@
-# Bash
-Documentação dos scripts Bash. Usados para automatizar tarefas em sistemas Unix.
+# Shell-Scripts
+Documentação de Shell Scripts. Usados para automatizar tarefas em sistemas Unix.
 
 ---
 
