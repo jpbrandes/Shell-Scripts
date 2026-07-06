@@ -15,7 +15,7 @@ It's the same script, but with a subtle change in the APT call command, the firs
 
 ---
 
-## ProgramasEssenciais.sh
+## EssentialPrograms.sh
 
 A simple script that installs useful programs, the programs contained in the script are:
 - Gimp
