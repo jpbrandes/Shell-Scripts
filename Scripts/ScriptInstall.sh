@@ -10,7 +10,7 @@ echo "========================================================"
 echo "INSTALLING ESSENTIAL PROGRAMS"
 echo "========================================================"
 
-sudo apt install git gparted vim gcc wget g++ htop vlc gimp openjdk-25-jdk libreoffice texlive-full texmaker -y 
+sudo apt install git gparted vim gcc wget g++ htop vlc openjdk-25-jdk libreoffice -y 
 
 echo "========================================================"
 echo "INSTALLING GOOGLE CHROME"
